@@ -189,8 +189,8 @@ function header(data) {
   const switcher = langCodes.map((code) => {
     const targetPageKey = data.pageKey === "root" ? "home" : data.pageKey;
     const href = pathFor(code, targetPageKey, data.area?.slug);
-    const active = code === lang.code ? ' aria-current="page"' : "";
-    return `<a href="${href}"${active}>${esc(languages[code].label)}</a>`;
+    const selected = code === lang.code ? " selected" : "";
+    return `<option value="${attr(href)}"${selected}>${esc(languages[code].label)}</option>`;
   }).join("");
   return `<header class="site-header">
     <nav class="nav" aria-label="${attr(lang.common.mainNavigation)}">
@@ -204,7 +204,18 @@ function header(data) {
         <a href="#faq">${esc(lang.nav.faq)}</a>
         <a class="button button-primary nav-quote" href="${attr(whatsappUrl(data.quoteMessage))}" target="_blank" rel="noopener">${esc(lang.nav.quote)}</a>
       </div>
-      <div class="language-switcher" role="group" aria-label="${attr(lang.common.languageLabel)}">${switcher}</div>
+      <label class="language-switcher">
+        <span class="sr-only">${esc(lang.common.languageLabel)}</span>
+        <svg class="language-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"></circle>
+          <path d="M3 12h18"></path>
+          <path d="M12 3a14 14 0 0 1 0 18"></path>
+          <path d="M12 3a14 14 0 0 0 0 18"></path>
+        </svg>
+        <select aria-label="${attr(lang.common.languageLabel)}" data-language-switcher>
+          ${switcher}
+        </select>
+      </label>
     </nav>
   </header>`;
 }
@@ -354,6 +365,13 @@ ${head(data)}
     ${finalCta(data)}
   </main>
   ${footer(data)}
+  <script>
+    document.querySelectorAll("[data-language-switcher]").forEach(function (select) {
+      select.addEventListener("change", function () {
+        window.location.href = select.value;
+      });
+    });
+  </script>
 </body>
 </html>
 `;
