@@ -54,6 +54,9 @@ function whatsappUrl(message) {
 
 function pageData(langCode, pageKey, area = null) {
   const lang = languages[langCode];
+  const quoteMessage = langCode === "en"
+    ? "Hello, I need packing and moving help in Ras Al Khaimah."
+    : "Hello, I need packing and moving help in Ras Al Khaimah.";
   if (pageKey === "home") {
     return {
       pageKey,
@@ -72,7 +75,7 @@ function pageData(langCode, pageKey, area = null) {
       finalTitle: lang.home.finalTitle,
       finalIntro: lang.home.finalIntro,
       canonicalPath: pathFor(langCode, pageKey),
-      quoteMessage: "Hello, I need packing and moving help in Ras Al Khaimah."
+      quoteMessage
     };
   }
 
@@ -94,12 +97,13 @@ function pageData(langCode, pageKey, area = null) {
       finalTitle: lang.home.finalTitle,
       finalIntro: lang.home.finalIntro,
       canonicalPath: "/",
-      quoteMessage: "Hello, I need packing and moving help in Ras Al Khaimah."
+      quoteMessage
     };
   }
 
   const areaName = area.name[langCode] || area.name.en;
-  const vars = { area: areaName };
+  const areaPrep = area.prep?.[langCode] || areaName;
+  const vars = { area: areaName, areaPrep };
   return {
     pageKey,
     lang,
@@ -135,23 +139,27 @@ function head(data) {
   const altLinks = alternates(data.pageKey, data.area?.slug)
     .map((item) => `  <link rel="alternate" hreflang="${attr(item.lang)}" href="${attr(item.href)}">`)
     .join("\n");
+  const keywordVars = {
+    area: data.areaName || "",
+    areaPrep: data.area?.prep?.[data.lang.code] || data.areaName || ""
+  };
   const keywords = data.area
-    ? [...data.area.keywords, `${data.area.name.en} packers and movers`, "Ras Al Khaimah movers"].join(", ")
-    : "movers and packers Ras Al Khaimah, Al Hamra movers, Mina Al Arab movers, house shifting RAK, packing services Ras Al Khaimah, villa movers UAE";
+    ? fill(data.lang.areaKeywords, keywordVars)
+    : data.lang.keywords;
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "MovingCompany",
-    name: site.businessName,
+    name: data.lang.brand,
     description: data.description,
     telephone: site.phoneHref,
     url: absolute(data.canonicalPath),
     image: site.image,
     areaServed: data.area
-      ? [data.area.name.en, "Ras Al Khaimah", "United Arab Emirates"]
-      : areas.map((area) => area.name.en).concat(["Ras Al Khaimah", "United Arab Emirates"]),
+      ? [data.areaName, data.lang.common.footerArea]
+      : areas.map((area) => area.name[data.lang.code] || area.name.en).concat([data.lang.common.footerArea]),
     priceRange: "$$",
     sameAs: whatsappUrl(data.quoteMessage),
-    serviceType: ["House moving", "Apartment moving", "Villa moving", "Packing services", "Furniture dismantling and reassembly"]
+    serviceType: data.lang.schemaServiceType
   };
 
   return `  <meta charset="UTF-8">
@@ -165,6 +173,9 @@ function head(data) {
   <meta property="og:type" content="website">
   <meta property="og:url" content="${attr(absolute(data.canonicalPath))}">
   <meta property="og:image" content="${attr(site.image)}">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="${attr(data.title)}">
+  <meta name="twitter:description" content="${attr(data.description)}">
   <meta name="theme-color" content="#0f766e">
   <link rel="canonical" href="${attr(absolute(data.canonicalPath))}">
 ${altLinks}
@@ -179,13 +190,12 @@ function header(data) {
     const targetPageKey = data.pageKey === "root" ? "home" : data.pageKey;
     const href = pathFor(code, targetPageKey, data.area?.slug);
     const active = code === lang.code ? ' aria-current="page"' : "";
-    return `<a href="${href}"${active}>${esc(languages[code].shortLabel)}</a>`;
+    return `<a href="${href}"${active}>${esc(languages[code].label)}</a>`;
   }).join("");
   return `<header class="site-header">
-    <nav class="nav" aria-label="Main navigation">
-      <a class="brand" href="/${lang.code}/">
-        <strong>${esc(site.businessName)}</strong>
-        <span>${esc(lang.common.footerArea)}</span>
+    <nav class="nav" aria-label="${attr(lang.common.mainNavigation)}">
+      <a class="brand" href="${data.pageKey === "root" ? "/" : `/${lang.code}/`}">
+        <strong>${esc(lang.brand)}</strong>
       </a>
       <div class="nav-links">
         <a href="#services">${esc(lang.nav.services)}</a>
@@ -239,7 +249,7 @@ function localSection(data) {
         </div>
         <aside class="quote-panel">
           <h3>${esc(data.lang.common.quoteButton)}</h3>
-          <p>${esc(data.lang.faq[2][1])}</p>
+          <p>${esc(data.lang.common.quotePromptBody)}</p>
           <a class="button button-primary" href="${attr(whatsappUrl(data.quoteMessage))}" target="_blank" rel="noopener">${esc(data.lang.common.quoteButton)}</a>
         </aside>
       </div>
@@ -290,7 +300,7 @@ function hero(data) {
           <p class="eyebrow">${esc(data.lang.common.eyebrow)}</p>
           <h1 id="hero-title">${esc(data.h1)}</h1>
           <p>${esc(data.intro)}</p>
-          <div class="hero-actions" role="group" aria-label="Contact options">
+          <div class="hero-actions" role="group" aria-label="${attr(data.lang.common.contactOptions)}">
             <a class="button button-primary" href="${attr(whatsappUrl(data.quoteMessage))}" target="_blank" rel="noopener">${esc(data.lang.common.whatsapp)}</a>
             <a class="button button-secondary" href="tel:${attr(site.phoneHref)}">${callLabel}</a>
           </div>
@@ -307,7 +317,7 @@ function finalCta(data) {
           <h2 id="contact-title">${esc(data.finalTitle)}</h2>
           <p>${esc(data.finalIntro)}</p>
         </div>
-        <a class="button button-secondary" href="${attr(whatsappUrl(data.quoteMessage))}" target="_blank" rel="noopener">WhatsApp ${esc(site.phoneDisplay)}</a>
+        <a class="button button-secondary" href="${attr(whatsappUrl(data.quoteMessage))}" target="_blank" rel="noopener">${esc(data.lang.common.whatsappLabel)} ${esc(site.phoneDisplay)}</a>
       </div>
     </section>`;
 }
@@ -315,13 +325,13 @@ function finalCta(data) {
 function footer(data) {
   return `<footer class="site-footer">
     <div class="footer-inner">
-      <span>${esc(site.businessName)}</span>
-      <span>${esc(data.lang.common.footerArea)} | WhatsApp: ${esc(site.phoneDisplay)}</span>
+      <span>${esc(data.lang.footerBrand)}</span>
+      <span>${esc(data.lang.common.whatsappLabel)}: ${esc(site.phoneDisplay)}</span>
     </div>
   </footer>
-  <a class="whatsapp-float" href="${attr(whatsappUrl(data.quoteMessage))}" target="_blank" rel="noopener" aria-label="Chat on WhatsApp">
+  <a class="whatsapp-float" href="${attr(whatsappUrl(data.quoteMessage))}" target="_blank" rel="noopener" aria-label="${attr(data.lang.common.chatAria)}">
     <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16.02 3.2A12.66 12.66 0 0 0 5.11 22.28L3.8 28.8l6.66-1.56A12.64 12.64 0 1 0 16.02 3.2Zm0 22.95a10.32 10.32 0 0 1-5.25-1.44l-.38-.23-3.95.92.78-3.86-.25-.4a10.34 10.34 0 1 1 9.05 5.01Zm5.66-7.73c-.31-.16-1.84-.91-2.13-1.01-.29-.11-.5-.16-.71.16-.21.31-.82 1.01-1.01 1.22-.18.21-.37.24-.68.08-.31-.16-1.31-.48-2.5-1.54-.92-.82-1.55-1.84-1.73-2.15-.18-.31-.02-.48.14-.64.14-.14.31-.37.47-.55.16-.18.21-.31.31-.52.11-.21.05-.39-.03-.55-.08-.16-.71-1.71-.97-2.34-.26-.62-.52-.53-.71-.54h-.6c-.21 0-.55.08-.84.39-.29.31-1.1 1.07-1.1 2.62s1.13 3.05 1.29 3.26c.16.21 2.22 3.39 5.38 4.75.75.32 1.34.52 1.8.66.76.24 1.45.21 1.99.13.61-.09 1.84-.75 2.1-1.48.26-.73.26-1.35.18-1.48-.08-.13-.29-.21-.6-.37Z"/></svg>
-    WhatsApp
+    ${esc(data.lang.common.whatsappLabel)}
   </a>`;
 }
 

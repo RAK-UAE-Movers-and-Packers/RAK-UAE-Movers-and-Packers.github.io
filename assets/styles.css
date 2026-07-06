@@ -47,9 +47,9 @@ a {
   margin: 0 auto;
   min-height: 72px;
   display: grid;
-  grid-template-columns: minmax(190px, 1fr) auto auto;
+  grid-template-columns: minmax(220px, 1fr) auto auto;
   align-items: center;
-  gap: 20px;
+  gap: 16px;
 }
 
 .brand {
@@ -59,7 +59,7 @@ a {
 }
 
 .brand strong {
-  font-size: clamp(0.92rem, 2vw, 1.05rem);
+  font-size: clamp(0.88rem, 1.8vw, 1.02rem);
   line-height: 1.2;
 }
 
@@ -86,15 +86,22 @@ a {
   display: flex;
   align-items: center;
   gap: 4px;
+  max-width: 100%;
   padding: 4px;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: var(--white);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.language-switcher::-webkit-scrollbar {
+  display: none;
 }
 
 .language-switcher a {
-  min-width: 34px;
-  padding: 6px 8px;
+  flex: 0 0 auto;
+  padding: 6px 10px;
   border-radius: 999px;
   color: var(--muted);
   font-size: 0.78rem;
@@ -673,13 +680,23 @@ h2 {
     width: min(100% - 24px, 1120px);
   }
 
-  .brand span {
-    display: none;
+  .nav {
+    grid-template-columns: 1fr;
+    align-items: start;
+    gap: 10px;
+    padding: 12px 0;
+  }
+
+  .brand strong {
+    font-size: 0.92rem;
+  }
+
+  .language-switcher {
+    justify-self: stretch;
   }
 
   .language-switcher a {
-    min-width: 30px;
-    padding-inline: 7px;
+    padding-inline: 9px;
   }
 
   .hero-actions .button {
